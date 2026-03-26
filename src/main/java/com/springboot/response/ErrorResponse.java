@@ -1,6 +1,8 @@
 package com.springboot.response;
 
+import com.springboot.exception.ExceptionCode;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 
 import javax.validation.ConstraintViolation;
@@ -10,22 +12,38 @@ import java.util.stream.Collectors;
 
 @Getter
 public class ErrorResponse {
+    private int status;
+    private String message;
     private List<FieldError> fieldErrors;
     private List<ConstraintViolationError> violationErrors;
 
-    private ErrorResponse(final List<FieldError> fieldErrors,
+    private ErrorResponse(final int status,
+                          final String message,
+                          final List<FieldError> fieldErrors,
                           final List<ConstraintViolationError> violationErrors) {
+        this.status = status;
+        this.message = message;
         this.fieldErrors = fieldErrors;
         this.violationErrors = violationErrors;
     }
 
     public static ErrorResponse of(BindingResult bindingResult) {
-        return new ErrorResponse(FieldError.of(bindingResult), null);
+        return new ErrorResponse(400, null, FieldError.of(bindingResult), null);
     }
 
     public static ErrorResponse of(Set<ConstraintViolation<?>> violations) {
-        return new ErrorResponse(null, ConstraintViolationError.of(violations));
+        return new ErrorResponse(400,null, null, ConstraintViolationError.of(violations));
     }
+
+    public static ErrorResponse of(ExceptionCode exceptionCode) {
+        return new ErrorResponse(exceptionCode.getStatus(), exceptionCode.getMessage(), null, null);
+    }
+
+    // HttpStatus: 스프링의 상태 코드
+    public static ErrorResponse of(HttpStatus httpStatus) {
+        return new ErrorResponse(httpStatus.value(), httpStatus.getReasonPhrase(), null, null);
+    }
+
 
     @Getter
     public static class FieldError {
